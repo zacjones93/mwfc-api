@@ -1,5 +1,5 @@
 import { Context, Effect, Layer } from "effect";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, ne } from "drizzle-orm";
 import type { Database } from "../db/client";
 import {
   competitions,
@@ -207,12 +207,17 @@ export function makeLeaderboardService(db: Database) {
             divisionLabel: scalingLevels.label,
           })
           .from(competitionRegistrations)
-          .innerJoin(users, eq(competitionRegistrations.userId, users.id))
+          .leftJoin(users, eq(competitionRegistrations.userId, users.id))
           .leftJoin(
             scalingLevels,
             eq(competitionRegistrations.divisionId, scalingLevels.id),
           )
-          .where(eq(competitionRegistrations.eventId, competitionId));
+          .where(
+            and(
+              eq(competitionRegistrations.eventId, competitionId),
+              ne(competitionRegistrations.status, "REMOVED"),
+            ),
+          );
 
         if (registrations.length === 0) {
           return { competition: comp, divisions: [], gyms: [] };
@@ -502,17 +507,18 @@ export function makeLeaderboardService(db: Database) {
           });
         }
 
-        // Rank gyms by totalScore descending
-        gyms.sort((a, b) => b.totalScore - a.totalScore);
+        // Remove gyms with no athletes, then rank by totalScore descending
+        const nonEmptyGyms = gyms.filter((g) => g.athleteCount > 0);
+        nonEmptyGyms.sort((a, b) => b.totalScore - a.totalScore);
         let gymRank = 1;
-        for (let i = 0; i < gyms.length; i++) {
-          if (i > 0 && gyms[i].totalScore < gyms[i - 1].totalScore) {
+        for (let i = 0; i < nonEmptyGyms.length; i++) {
+          if (i > 0 && nonEmptyGyms[i].totalScore < nonEmptyGyms[i - 1].totalScore) {
             gymRank = i + 1;
           }
-          gyms[i].rank = gymRank;
+          nonEmptyGyms[i].rank = gymRank;
         }
 
-        return { competition: comp, divisions, gyms };
+        return { competition: comp, divisions, gyms: nonEmptyGyms };
       },
       catch: (error) =>
         error instanceof Error ? error : new Error(String(error)),

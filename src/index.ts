@@ -74,7 +74,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
       headers: {
         ...corsHeaders,
         "Content-Type": "application/json",
-        "Cache-Control": "s-maxage=60",
+        "Cache-Control": "no-store",
       },
     });
   } catch (err) {

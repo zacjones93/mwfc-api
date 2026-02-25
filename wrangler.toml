@@ -5,6 +5,11 @@ compatibility_date = "2024-12-18"
 [vars]
 ALLOWED_ORIGINS = "https://mountainwestfitnesschampionship.com,http://localhost:3000"
 
+[observability]
+[observability.logs]
+enabled = false
+invocation_logs = true
+
 # Database secrets - set via wrangler secret put or .dev.vars
 # Option A: Single URL
 #   wrangler secret put DATABASE_URL

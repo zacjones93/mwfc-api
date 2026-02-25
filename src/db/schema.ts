@@ -27,12 +27,14 @@ export const competitionRegistrations = mysqlTable(
     divisionId: varchar({ length: 255 }),
     registeredAt: datetime().notNull(),
     metadata: text(),
+    status: varchar({ length: 20 }).notNull().default("active"),
     createdAt: datetime().notNull(),
     updatedAt: datetime().notNull(),
   },
   (table) => [
     index("competition_registrations_event_idx").on(table.eventId),
     index("competition_registrations_user_idx").on(table.userId),
+    index("competition_registrations_status_idx").on(table.eventId, table.status),
   ],
 );
 
